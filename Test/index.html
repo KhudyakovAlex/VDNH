@@ -55,6 +55,14 @@
       <span id="dimmerVal">100%</span>
       <input id="dimmerRange" type="range" min="0" max="100" value="100" />
     </div>
+    <div id="grpAct" hidden>
+      <button type="button" id="grpOk" title="Готово">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg>
+      </button>
+      <button type="button" id="grpCancel" title="Отмена">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
     <button type="button" id="camCopy" title="Копировать координаты">Координаты</button>
     <div class="view-tools-wrap">
       <div id="selHint">Нажмите и удерживайте Shift. Справа появится выбор способа выделения.<br>Выбрав подходящий, выделяйте светильники и можете вкл/выкл и диммировать (по долгому нажатию) их толпой ---&gt;</div>
@@ -67,6 +75,13 @@
         <button type="button" id="selLasso" title="Кривая">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 17c1.5-7 5.5-10 9-7 2 1.8 0 4.2-2.2 3.6-2.6-.7-1.2-4.8 3.4-5.4 4.2-.6 6.6 3.2 5.4 7.2"/>
+          </svg>
+        </button>
+      </aside>
+      <aside class="grp-tools">
+        <button type="button" id="grpEdit" title="Редактирование групп">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6h7v7H4zM13 6h7v7h-7zM8 13h8v7H8z" fill="none" stroke="currentColor" stroke-width="1.8"/>
           </svg>
         </button>
       </aside>

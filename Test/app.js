@@ -133,6 +133,7 @@ function buildScene(root) {
         start,
         count: geo.attributes.position.count,
         center: box.getCenter(new THREE.Vector3()),
+        box,
       });
       lightGeos.push(geo);
     } else {
@@ -219,6 +220,154 @@ function groupFor(fix) {
 }
 function setLevelAll(list, level) {
   for (const f of list) setLevel(f, level);
+}
+
+let editGroups = false;
+let editGroup = null;
+let lightGroups = [];
+const grpViz = [];
+const grpActEl = document.getElementById("grpAct");
+const grpActPos = new THREE.Vector3();
+const GRP_MAT = new THREE.LineBasicMaterial({ color: 0xffffff });
+const GRP_FILL = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+const GRP_R = 0.42;
+const GRP_CIRCLE = new THREE.CircleGeometry(GRP_R, 24);
+
+function clearGrpViz() {
+  for (const m of grpViz) {
+    scene.remove(m);
+    if (m.geometry !== GRP_CIRCLE) m.geometry.dispose();
+  }
+  grpViz.length = 0;
+}
+function addGrpLine(pts) {
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), GRP_MAT);
+  scene.add(line);
+  grpViz.push(line);
+}
+function membersOf(names) {
+  return names.map((n) => fixtures.find((f) => f.name === n)).filter(Boolean);
+}
+function drawGrpGraph(mem) {
+  if (mem.length < 1) return;
+  const lift = (c) => new THREE.Vector3(c.x, c.y + 0.15, c.z);
+  for (const f of mem) {
+    const disk = new THREE.Mesh(GRP_CIRCLE, GRP_FILL);
+    disk.rotation.x = -Math.PI / 2;
+    disk.position.copy(lift(f.center));
+    scene.add(disk);
+    grpViz.push(disk);
+  }
+  const edges = [];
+  for (let i = 0; i < mem.length; i++) {
+    for (let j = i + 1; j < mem.length; j++) {
+      edges.push({ i, j, d: mem[i].center.distanceToSquared(mem[j].center) });
+    }
+  }
+  edges.sort((a, b) => a.d - b.d);
+  const parent = mem.map((_, i) => i);
+  const find = (x) => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+  let need = mem.length - 1;
+  for (const e of edges) {
+    const a = find(e.i), b = find(e.j);
+    if (a === b) continue;
+    parent[a] = b;
+    addGrpLine([lift(mem[e.i].center), lift(mem[e.j].center)]);
+    if (--need <= 0) break;
+  }
+}
+function rebuildGrpViz() {
+  clearGrpViz();
+  const taken = new Set(editGroup?.names || []);
+  for (const g of lightGroups) {
+    if (g === editGroup?.saved) continue;
+    drawGrpGraph(membersOf(g.names.filter((n) => !taken.has(n))));
+  }
+  if (editGroup) drawGrpGraph(membersOf(editGroup.names));
+}
+function savedGroupOf(name) {
+  return lightGroups.find((g) => g.names.includes(name));
+}
+function syncEditSel() {
+  fixtures.forEach((f) => { f.selected = !!editGroup?.names.includes(f.name); });
+  applyHover(null);
+  rebuildGrpViz();
+}
+function commitEditGroup() {
+  if (!editGroup) return;
+  const names = editGroup.names;
+  for (const g of lightGroups) {
+    if (g === editGroup.saved) continue;
+    g.names = g.names.filter((n) => !names.includes(n));
+  }
+  lightGroups = lightGroups.filter((g) => g.names.length >= 2 || g === editGroup.saved);
+  if (names.length >= 2) {
+    if (editGroup.saved) editGroup.saved.names = [...names];
+    else lightGroups.push({ names: [...names] });
+  } else if (editGroup.saved) {
+    lightGroups = lightGroups.filter((g) => g !== editGroup.saved);
+  }
+  editGroup = null;
+}
+function cancelEditGroup() {
+  editGroup = null;
+}
+function clickEditGroup(fix) {
+  if (editGroup?.names.includes(fix.name)) {
+    editGroup.names = editGroup.names.filter((n) => n !== fix.name);
+    if (!editGroup.names.length) editGroup = null;
+    syncEditSel();
+    return;
+  }
+  const other = savedGroupOf(fix.name);
+  if (!editGroup) {
+    editGroup = other
+      ? { names: [...other.names], saved: other }
+      : { names: [fix.name], saved: null };
+    syncEditSel();
+    return;
+  }
+  editGroup.names.push(fix.name);
+  syncEditSel();
+}
+function placeGrpAct() {
+  if (!grpActEl) return;
+  if (!editGroups || !editGroup?.names.length) {
+    grpActEl.hidden = true;
+    return;
+  }
+  const mem = membersOf(editGroup.names);
+  if (!mem.length) {
+    grpActEl.hidden = true;
+    return;
+  }
+  const r = viewEl.getBoundingClientRect();
+  let minSx = Infinity, maxSx = -Infinity, minSy = Infinity, vis = false;
+  for (const f of mem) {
+    const mn = f.box.min, mx = f.box.max;
+    for (const x of [mn.x, mx.x]) {
+      for (const y of [mn.y, mx.y]) {
+        for (const z of [mn.z, mx.z]) {
+          grpActPos.set(x, y, z);
+          grpActPos.project(camera);
+          if (grpActPos.z < -1 || grpActPos.z > 1) continue;
+          const sx = (grpActPos.x * 0.5 + 0.5) * r.width;
+          const sy = (-grpActPos.y * 0.5 + 0.5) * r.height;
+          vis = true;
+          if (sx < minSx) minSx = sx;
+          if (sx > maxSx) maxSx = sx;
+          if (sy < minSy) minSy = sy;
+        }
+      }
+    }
+  }
+  if (!vis) {
+    grpActEl.hidden = true;
+    return;
+  }
+  grpActEl.hidden = false;
+  grpActEl.style.left = `${(minSx + maxSx) * 0.5}px`;
+  grpActEl.style.top = `${minSy}px`;
 }
 
 const ripples = [];
@@ -540,13 +689,35 @@ document.getElementById("selLasso")?.addEventListener("pointerdown", (e) => {
   e.stopPropagation();
   setSelMode("lasso");
 });
+document.getElementById("grpEdit")?.addEventListener("click", (e) => {
+  editGroups = e.currentTarget.classList.toggle("active");
+  if (!editGroups) {
+    commitEditGroup();
+    clearSelection();
+    rebuildGrpViz();
+    if (grpActEl) grpActEl.hidden = true;
+  }
+});
+document.getElementById("grpOk")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  commitEditGroup();
+  syncEditSel();
+});
+document.getElementById("grpCancel")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  cancelEditGroup();
+  syncEditSel();
+});
 
 function viewPoint(e) {
   const r = viewEl.getBoundingClientRect();
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 function applyHover(hoverFix) {
-  fixtures.forEach((f) => { f.targetHover = f.selected || f === hoverFix ? 1 : 0; });
+  fixtures.forEach((f) => {
+    const inEdit = editGroups && editGroup?.names.includes(f.name);
+    f.targetHover = f.selected || inEdit || f === hoverFix ? 1 : 0;
+  });
 }
 function clearSelection() {
   fixtures.forEach((f) => { f.selected = false; });
@@ -621,7 +792,7 @@ function clearHold() {
 renderer.domElement.addEventListener("pointerdown", (e) => {
   clearHold();
   hideDimmer();
-  if (e.button === 0 && e.shiftKey) {
+  if (e.button === 0 && e.shiftKey && !editGroups) {
     e.stopImmediatePropagation();
     const p = viewPoint(e);
     press = { x: e.clientX, y: e.clientY, id: e.pointerId, fix: null, held: false, box: true };
@@ -641,6 +812,7 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
   if (fix) {
     e.stopImmediatePropagation();
     if (!fly) controls.enabled = false;
+    if (editGroups) return;
     holdTimer = setTimeout(() => {
       if (!press?.fix) return;
       press.held = true;
@@ -683,6 +855,10 @@ renderer.domElement.addEventListener("pointerup", (e) => {
     return;
   }
   if (dx * dx + dy * dy > 25) return;
+  if (editGroups) {
+    if (fix) clickEditGroup(fix);
+    return;
+  }
   if (!fix) {
     clearSelection();
     return;
@@ -756,6 +932,7 @@ function tick(now) {
   updateRipples(dt);
   updateFly(dt);
   if (!fly) controls.update();
+  placeGrpAct();
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
