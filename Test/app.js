@@ -216,6 +216,8 @@ function setLevel(fix, level) {
 }
 function groupFor(fix) {
   if (fix.selected) return fixtures.filter((f) => f.selected);
+  const g = lightGroups.find((gr) => gr.names.includes(fix.name));
+  if (g) return membersOf(g.names);
   return [fix];
 }
 function setLevelAll(list, level) {
@@ -252,9 +254,12 @@ function drawGrpGraph(mem) {
   if (mem.length < 1) return;
   const lift = (c) => new THREE.Vector3(c.x, c.y + 0.15, c.z);
   for (const f of mem) {
+    const sz = f.box.getSize(grpActPos);
+    const r = Math.min(GRP_R, Math.max(sz.x, sz.y, sz.z) * 0.05);
     const disk = new THREE.Mesh(GRP_CIRCLE, GRP_FILL);
     disk.rotation.x = -Math.PI / 2;
     disk.position.copy(lift(f.center));
+    disk.scale.setScalar(r / GRP_R);
     scene.add(disk);
     grpViz.push(disk);
   }
@@ -311,6 +316,20 @@ function commitEditGroup() {
 }
 function cancelEditGroup() {
   editGroup = null;
+}
+function breakEditGroup() {
+  if (editGroup?.saved) lightGroups = lightGroups.filter((g) => g !== editGroup.saved);
+  editGroup = null;
+}
+function applySelToEditGroup() {
+  if (!editGroups) return;
+  const names = fixtures.filter((f) => f.selected).map((f) => f.name);
+  if (!names.length) return;
+  if (!editGroup) editGroup = { names: [], saved: null };
+  for (const n of names) {
+    if (!editGroup.names.includes(n)) editGroup.names.push(n);
+  }
+  syncEditSel();
 }
 function clickEditGroup(fix) {
   if (editGroup?.names.includes(fix.name)) {
@@ -708,6 +727,11 @@ document.getElementById("grpCancel")?.addEventListener("click", (e) => {
   cancelEditGroup();
   syncEditSel();
 });
+document.getElementById("grpBreak")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  breakEditGroup();
+  syncEditSel();
+});
 
 function viewPoint(e) {
   const r = viewEl.getBoundingClientRect();
@@ -792,7 +816,7 @@ function clearHold() {
 renderer.domElement.addEventListener("pointerdown", (e) => {
   clearHold();
   hideDimmer();
-  if (e.button === 0 && e.shiftKey && !editGroups) {
+  if (e.button === 0 && e.shiftKey) {
     e.stopImmediatePropagation();
     const p = viewPoint(e);
     press = { x: e.clientX, y: e.clientY, id: e.pointerId, fix: null, held: false, box: true };
@@ -810,8 +834,6 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
   const fix = e.button === 0 ? pickFixture(e) : null;
   press = { x: e.clientX, y: e.clientY, id: e.pointerId, fix, held: false };
   if (fix) {
-    e.stopImmediatePropagation();
-    if (!fly) controls.enabled = false;
     if (editGroups) return;
     holdTimer = setTimeout(() => {
       if (!press?.fix) return;
@@ -824,6 +846,7 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
           paintFixture(f);
         }
       }
+      if (!fly) controls.enabled = false;
       showDimmer(press.fix);
       renderer.domElement.setPointerCapture?.(press.id);
     }, 1000);
@@ -834,11 +857,13 @@ renderer.domElement.addEventListener("pointerup", (e) => {
   clearHold();
   if (boxSel) {
     endBoxSel();
+    applySelToEditGroup();
     press = null;
     return;
   }
   if (lasso) {
     endLasso();
+    applySelToEditGroup();
     press = null;
     return;
   }
@@ -866,7 +891,7 @@ renderer.domElement.addEventListener("pointerup", (e) => {
   const group = groupFor(fix);
   const on = !fix.on;
   for (const f of group) setFixture(f, on);
-  spawnRipple(fix);
+  for (const f of group) spawnRipple(f);
   clearSelection();
 }, true);
 renderer.domElement.addEventListener("pointercancel", () => {

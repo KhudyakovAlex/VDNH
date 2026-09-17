@@ -264,6 +264,14 @@ body { display: flex; flex-direction: column; }
 #grpCancel { color: #bc4f50; }
 #grpOk:hover { color: #8fd896; }
 #grpCancel:hover { color: #d86a6b; }
+#grpAct #grpBreak {
+  width: auto;
+  padding: 0 10px;
+  color: #c5d0da;
+  font-size: 12px;
+  white-space: nowrap;
+}
+#grpBreak:hover { color: #e8eef6; }
 
 .view-tools, .sel-tools {
   display: flex;
