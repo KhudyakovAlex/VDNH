@@ -259,6 +259,8 @@ const grpActEl = document.getElementById("grpAct");
 const grpActPos = new THREE.Vector3();
 const GRP_MAT = new THREE.LineBasicMaterial({ color: 0xffffff });
 const GRP_FILL = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+const GRP_EDIT_MAT = new THREE.LineBasicMaterial({ color: 0xbc4f50 });
+const GRP_EDIT_FILL = new THREE.MeshBasicMaterial({ color: 0xbc4f50, side: THREE.DoubleSide });
 const GRP_R = 0.42;
 const GRP_CIRCLE = new THREE.CircleGeometry(GRP_R, 24);
 
@@ -269,21 +271,23 @@ function clearGrpViz() {
   }
   grpViz.length = 0;
 }
-function addGrpLine(pts) {
-  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), GRP_MAT);
+function addGrpLine(pts, mat = GRP_MAT) {
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
   scene.add(line);
   grpViz.push(line);
 }
 function membersOf(names) {
   return names.map((n) => fixtures.find((f) => f.name === n)).filter(Boolean);
 }
-function drawGrpGraph(mem) {
+function drawGrpGraph(mem, edit) {
   if (mem.length < 1) return;
+  const fill = edit ? GRP_EDIT_FILL : GRP_FILL;
+  const lineMat = edit ? GRP_EDIT_MAT : GRP_MAT;
   const lift = (c) => new THREE.Vector3(c.x, c.y + 0.15, c.z);
   for (const f of mem) {
     const sz = f.box.getSize(grpActPos);
     const r = Math.min(GRP_R, Math.max(sz.x, sz.y, sz.z) * 0.05);
-    const disk = new THREE.Mesh(GRP_CIRCLE, GRP_FILL);
+    const disk = new THREE.Mesh(GRP_CIRCLE, fill);
     disk.rotation.x = -Math.PI / 2;
     disk.position.copy(lift(f.center));
     disk.scale.setScalar(r / GRP_R);
@@ -304,7 +308,7 @@ function drawGrpGraph(mem) {
     const a = find(e.i), b = find(e.j);
     if (a === b) continue;
     parent[a] = b;
-    addGrpLine([lift(mem[e.i].center), lift(mem[e.j].center)]);
+    addGrpLine([lift(mem[e.i].center), lift(mem[e.j].center)], lineMat);
     if (--need <= 0) break;
   }
 }
@@ -315,7 +319,7 @@ function rebuildGrpViz() {
     if (g === editGroup?.saved) continue;
     drawGrpGraph(membersOf(g.names.filter((n) => !taken.has(n))));
   }
-  if (editGroup) drawGrpGraph(membersOf(editGroup.names));
+  if (editGroup) drawGrpGraph(membersOf(editGroup.names), true);
 }
 function savedGroupOf(name) {
   return lightGroups.find((g) => g.names.includes(name));
@@ -536,15 +540,7 @@ function applyPose(dest) {
   if (controls._sphericalDelta) controls._sphericalDelta.set(0, 0, 0);
 }
 
-function applyLocation(id, instant) {
-  const loc = LOCATIONS[id];
-  if (!loc) return;
-  const dest = locPose(loc);
-  if (instant) {
-    fly = null;
-    applyPose(dest);
-    return;
-  }
+function flyTo(dest, skipIfClose) {
   const startTarget = controls.target.clone();
   const s0 = new THREE.Spherical().setFromVector3(_flyOff.subVectors(camera.position, startTarget));
   const s1 = new THREE.Spherical().setFromVector3(_flyOff.subVectors(dest.pos, dest.target));
@@ -553,7 +549,8 @@ function applyLocation(id, instant) {
   while (dTheta < -Math.PI) dTheta += Math.PI * 2;
   const horiz = Math.hypot(dest.target.x - startTarget.x, dest.target.z - startTarget.z)
     + Math.hypot(dest.pos.x - camera.position.x, dest.pos.z - camera.position.z);
-  if (horiz < 0.4) {
+  const dPhi = Math.abs(Math.max(0.02, s1.phi) - Math.max(0.02, s0.phi));
+  if (skipIfClose && horiz < 0.4 && dPhi < 0.05) {
     applyPose(dest);
     return;
   }
@@ -562,7 +559,7 @@ function applyLocation(id, instant) {
   controls.enabled = false;
   fly = {
     t: 0,
-    dur: THREE.MathUtils.clamp(0.8 + horiz / 170, 0.9, 2.4) / 1.5,
+    dur: THREE.MathUtils.clamp(0.8 + horiz / 170 + dPhi * 0.5, 0.9, 2.4) / 1.5,
     startTarget,
     destTarget: dest.target,
     r0: s0.radius,
@@ -574,6 +571,18 @@ function applyLocation(id, instant) {
     lift: Math.max(12, horiz * 0.45),
     dest,
   };
+}
+
+function applyLocation(id, instant) {
+  const loc = LOCATIONS[id];
+  if (!loc) return;
+  const dest = locPose(loc);
+  if (instant) {
+    fly = null;
+    applyPose(dest);
+    return;
+  }
+  flyTo(dest, true);
 }
 
 function easeInOut(t) {
@@ -603,15 +612,13 @@ function applyHomeView() {
 }
 
 function applyTopView() {
-  camera.up.set(0, 1, 0);
-  controls.minPolarAngle = 0;
-  const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+  const target = controls.target.clone();
+  const offset = new THREE.Vector3().subVectors(camera.position, target);
   const spherical = new THREE.Spherical().setFromVector3(offset);
   spherical.phi = 0.02;
   spherical.makeSafe();
-  camera.position.copy(controls.target).add(offset.setFromSpherical(spherical));
-  camera.lookAt(controls.target);
-  controls.update();
+  const pos = target.clone().add(offset.setFromSpherical(spherical));
+  flyTo({ pos, target, flat: true });
 }
 
 function setActiveLoc(id) {
@@ -712,10 +719,8 @@ function setSelMode(mode) {
   document.getElementById("selLasso")?.classList.toggle("active", mode === "lasso");
 }
 setSelMode("rect");
-const selHint = document.getElementById("selHint");
 function showSelTools() {
   selTools?.classList.add("show");
-  selHint?.classList.add("dim");
 }
 function hideSelTools() {
   if (boxSel || lasso) return;
