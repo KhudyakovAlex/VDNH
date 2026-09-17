@@ -126,8 +126,8 @@ body { display: flex; flex-direction: column; }
   position: absolute;
   display: none;
   z-index: 3;
-  border: 1px dashed #5eb0e0;
-  background: rgba(64, 160, 210, 0.08);
+  border: 2px dashed #7ad4ff;
+  background: rgba(80, 190, 255, 0.14);
   pointer-events: none;
 }
 #marquee.show { display: block; }
@@ -142,8 +142,8 @@ body { display: flex; flex-direction: column; }
   display: none;
 }
 .lasso-svg.show { display: block; }
-#lassoFill { fill: rgba(64, 160, 210, 0.08); }
-#lassoLine { fill: none; stroke: #5eb0e0; stroke-width: 1; stroke-dasharray: 5 4; }
+#lassoFill { fill: rgba(80, 190, 255, 0.14); }
+#lassoLine { fill: none; stroke: #7ad4ff; stroke-width: 2; stroke-dasharray: 6 4; }
 
 #dimmer {
   position: absolute;
@@ -195,7 +195,24 @@ body { display: flex; flex-direction: column; }
   z-index: 2;
   display: flex;
   gap: 6px;
-  align-items: flex-start;
+  align-items: center;
+}
+#selHint {
+  max-width: 780px;
+  color: #e24b4b;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: right;
+  animation: selHintBlink 1.1s ease-in-out infinite;
+}
+#selHint.dim {
+  color: #4a5562;
+  animation: none;
+  opacity: 0.55;
+}
+@keyframes selHintBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
 }
 .view-tools, .sel-tools {
   display: flex;

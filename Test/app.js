@@ -182,10 +182,10 @@ const COL_OFF = [0.12, 0.07, 0.02];
 const COL_ON = [1, 0.42, 0.04];
 const COL_HOV = [1, 0.62, 0.14];
 function baseColor(fix) {
-  return fix.on ? mixCol(COL_OFF, COL_ON, fix.level) : COL_OFF;
+  return mixCol(COL_OFF, COL_ON, fix.on ? fix.level : 0);
 }
 function hoverColor(fix) {
-  return fix.on ? mixCol(COL_OFF, COL_HOV, fix.level) : [0.28, 0.16, 0.05];
+  return mixCol(COL_OFF, COL_HOV, fix.on ? fix.level : 0);
 }
 function paintFixture(fix) {
   if (!lightMesh) return;
@@ -517,7 +517,11 @@ function setSelMode(mode) {
   document.getElementById("selLasso")?.classList.toggle("active", mode === "lasso");
 }
 setSelMode("rect");
-function showSelTools() { selTools?.classList.add("show"); }
+const selHint = document.getElementById("selHint");
+function showSelTools() {
+  selTools?.classList.add("show");
+  selHint?.classList.add("dim");
+}
 function hideSelTools() {
   if (boxSel || lasso) return;
   selTools?.classList.remove("show");
