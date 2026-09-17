@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ВДНХ · Этаж 1</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three.module.js",
+        "three/addons/": "./vendor/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="chrome-head">
+    <div class="row sites">
+      <img id="logo" src="./logo.jpg" alt="ВДНХ" />
+      <button type="button" class="site">Павильон 69</button>
+      <button type="button" class="site">Павильон 70</button>
+      <button type="button" class="site active">Павильон 75</button>
+      <div class="clock" id="clock"></div>
+    </div>
+    </div>
+    <div class="row crumb">
+      <nav>
+        <span>Павильон 75</span>
+        <i>›</i><span>Этажи</span>
+        <i>›</i><b>1 этаж</b>
+      </nav>
+      <div class="servers">
+        <span class="ok">● Сервер 1</span>
+        <span>● Сервер 2</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="view">
+    <div id="loader">Загрузка модели…</div>
+    <aside class="loc-panel" aria-label="Локации">
+      <div class="loc-title">Локации</div>
+      <button type="button" class="loc active" data-loc="floor1">Этаж 1</button>
+      <button type="button" class="loc" data-loc="hall1">Выставочный зал 1</button>
+      <button type="button" class="loc" data-loc="hall2">Выставочный зал 2</button>
+      <button type="button" class="loc" data-loc="lobby">Прихожая</button>
+    </aside>
+    <div id="marquee"></div>
+    <svg id="lassoSvg" class="lasso-svg" aria-hidden="true">
+      <polygon id="lassoFill" points="" />
+      <polyline id="lassoLine" points="" />
+    </svg>
+    <div id="dimmer">
+      <span id="dimmerVal">100%</span>
+      <input id="dimmerRange" type="range" min="0" max="100" value="100" />
+    </div>
+    <button type="button" id="camCopy" title="Копировать координаты">Координаты</button>
+    <div class="view-tools-wrap">
+      <aside class="sel-tools" id="selTools" aria-label="Выделение">
+        <button type="button" id="selRect" class="active" title="Квадрат">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="5" width="14" height="14" fill="none" stroke-dasharray="2.4 2"/>
+          </svg>
+        </button>
+        <button type="button" id="selLasso" title="Кривая">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 17c1.5-7 5.5-10 9-7 2 1.8 0 4.2-2.2 3.6-2.6-.7-1.2-4.8 3.4-5.4 4.2-.6 6.6 3.2 5.4 7.2"/>
+          </svg>
+        </button>
+      </aside>
+      <aside class="view-tools" aria-label="Управление моделью">
+        <button type="button" id="camTop" title="Вид сверху">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v9.2l-3.4-3.4-1.4 1.4L12 16.6l4.8-6.4-1.4-1.4-3.4 3.4V3z"/>
+            <path d="M4 19.2h16v2.2H4z"/>
+          </svg>
+        </button>
+        <button type="button" id="camHome" title="Исходный вид">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 11.2 12 3.5l9 7.7V21h-6.2v-6.2H9.2V21H3z"/>
+          </svg>
+        </button>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="chrome-foot">
+    <div class="tools">
+      <button type="button" title="Фильтр">☰</button>
+      <button type="button" title="Папка">▢</button>
+      <button type="button" title="Список">☰</button>
+      <button type="button" title="Скачать">↓</button>
+      <button type="button" title="Настройки">⚙</button>
+      <button type="button" title="Звук">♪</button>
+    </div>
+    <div class="grid-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Время генерации</th>
+            <th>Время срабатывания</th>
+            <th>Время деактивации</th>
+            <th>Сообщение</th>
+            <th>Источник события</th>
+            <th>Важность</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>16.04.2026 14:26:54</td>
+            <td>16.04.2026 14:27:50</td>
+            <td></td>
+            <td>ИТП здания. Теплоноситель. Давление обратки в норме</td>
+            <td>01_TV_13.01_System_HeatSupply_ITP_HSS.HssRwPresAlimOutDPresentValue</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>16.04.2026 13:37:12</td>
+            <td>16.04.2026 13:38:08</td>
+            <td>16.04.2026 14:24:33</td>
+            <td>ИТП здания. Теплоноситель. Температура стабильна</td>
+            <td>01_TV_13.01_System_HeatSupply_ITP_HSS.HssRwPresAlimOutDPresentValue</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>16.04.2026 13:29:04</td>
+            <td>16.04.2026 13:30:00</td>
+            <td></td>
+            <td>Система отопления основного здания. Режим работа</td>
+            <td>01_VZ_22.01_Floor31.floor31_Gnr1AlmValOutDPresentValue</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>16.04.2026 13:29:02</td>
+            <td>16.04.2026 13:29:58</td>
+            <td></td>
+            <td>Система теплоснабжения вентиляции. Параметры в норме</td>
+            <td>03_VZ_22.01_System_HeatSupply_HSS.HssHO2Gnr1AlmValOutDPresentValue</td>
+            <td>1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
