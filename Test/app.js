@@ -82,6 +82,7 @@ async function init() {
     key.target.position.copy(center);
     scene.add(key.target);
     if (countEl) countEl.textContent = "Светильников: " + fixtures.length;
+    applyPresetGroups();
     loaderEl.classList.add("hidden");
     window.__READY = true;
   } catch (err) {
@@ -227,6 +228,32 @@ function setLevelAll(list, level) {
 let editGroups = false;
 let editGroup = null;
 let lightGroups = [];
+function fixtureNum(name) {
+  const m = /^D-(\d+)/.exec(name);
+  return m ? Number(m[1]) : null;
+}
+function applyPresetGroups() {
+  const ranges = [
+    [1010100, 1010129],
+    [1010200, 1010227],
+    [1010300, 1010327],
+    [1010400, 1010434],
+    [1020100, 1020129],
+    [1020200, 1020223],
+    [1020300, 1020319],
+    [1020400, 1020424],
+  ];
+  for (const [from, to] of ranges) {
+    const names = fixtures
+      .map((f) => f.name)
+      .filter((n, i, a) => {
+        const num = fixtureNum(n);
+        return num != null && num >= from && num <= to && a.indexOf(n) === i;
+      });
+    if (names.length >= 2) lightGroups.push({ names });
+  }
+  rebuildGrpViz();
+}
 const grpViz = [];
 const grpActEl = document.getElementById("grpAct");
 const grpActPos = new THREE.Vector3();
@@ -853,7 +880,8 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
   }
 }, true);
 renderer.domElement.addEventListener("pointerup", (e) => {
-  if (boxSel || lasso || press?.held || press?.fix) e.stopImmediatePropagation();
+  if (boxSel || lasso) e.stopImmediatePropagation();
+  if (press?.held && !fly) controls.enabled = true;
   clearHold();
   if (boxSel) {
     endBoxSel();
