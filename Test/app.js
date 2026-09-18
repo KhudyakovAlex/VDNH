@@ -37,13 +37,13 @@ const LOCATIONS = {
     rotZ: 0.9707,
   },
   hall1zal: {
-    pos: new THREE.Vector3(136.214, 167.454, -48.078),
-    target: new THREE.Vector3(136.214, -13.126, -51.690),
+    pos: new THREE.Vector3(144.924, 158.542, -53.533),
+    target: new THREE.Vector3(144.924, -13.009, -56.964),
     rotZ: 0,
   },
   hall2zal: {
-    pos: new THREE.Vector3(328.710, 136.854, -120.020),
-    target: new THREE.Vector3(326.154, -17.970, -121.769),
+    pos: new THREE.Vector3(320.498, 129.272, -124.731),
+    target: new THREE.Vector3(320.498, -17.840, -124.732),
     rotZ: 0.9707,
   },
   lobby: {
@@ -813,6 +813,8 @@ function applyTopView() {
 function setActiveLoc(id) {
   currentLoc = id;
   document.querySelectorAll(".loc").forEach((b) => b.classList.toggle("active", b.dataset.loc === id));
+  hideScnName();
+  renderUserScen();
 }
 
 async function copyText(text) {
@@ -865,6 +867,89 @@ document.getElementById("scnEmerg")?.addEventListener("click", () => {
 document.getElementById("scnDuty")?.addEventListener("click", () => {
   setLevelAll(fixturesForLoc(currentLoc), 0.15);
 });
+
+const SCN_KEY = "vdnh-scen";
+const scnUserEl = document.getElementById("scnUser");
+const scnNameEl = document.getElementById("scnName");
+let scnDraft = null;
+function loadScen() {
+  try { return JSON.parse(localStorage.getItem(SCN_KEY) || "{}") || {}; }
+  catch { return {}; }
+}
+function saveScen(data) {
+  localStorage.setItem(SCN_KEY, JSON.stringify(data));
+}
+function snapshotLoc() {
+  const lights = {};
+  for (const f of fixturesForLoc(currentLoc)) {
+    lights[f.name] = { on: f.on, level: f.level };
+  }
+  return lights;
+}
+function applyScen(sc) {
+  const byName = new Map(fixtures.map((f) => [f.name, f]));
+  for (const [name, st] of Object.entries(sc.lights || {})) {
+    const f = byName.get(name);
+    if (!f) continue;
+    if (st.on === false || (st.level ?? 0) < 0.01) setLevel(f, 0);
+    else setLevel(f, st.level ?? 1);
+  }
+}
+function renderUserScen() {
+  if (!scnUserEl) return;
+  scnUserEl.replaceChildren();
+  const list = loadScen()[currentLoc] || [];
+  list.forEach((sc, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "scn";
+    btn.textContent = sc.name;
+    btn.addEventListener("click", () => applyScen(sc));
+    btn.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      if (!confirm("Удалить сценарий «" + sc.name + "»?")) return;
+      const data = loadScen();
+      const arr = data[currentLoc] || [];
+      arr.splice(i, 1);
+      if (!arr.length) delete data[currentLoc];
+      else data[currentLoc] = arr;
+      saveScen(data);
+      renderUserScen();
+    });
+    scnUserEl.appendChild(btn);
+  });
+}
+function hideScnName() {
+  scnDraft = null;
+  if (scnNameEl) {
+    scnNameEl.value = "";
+    scnNameEl.hidden = true;
+  }
+}
+document.getElementById("scnAdd")?.addEventListener("click", () => {
+  scnDraft = snapshotLoc();
+  if (scnNameEl) {
+    scnNameEl.hidden = false;
+    scnNameEl.value = "";
+    scnNameEl.focus();
+  }
+});
+scnNameEl?.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    hideScnName();
+    return;
+  }
+  if (e.key !== "Enter") return;
+  const name = scnNameEl.value.trim();
+  if (!name || !scnDraft) return;
+  const data = loadScen();
+  if (!data[currentLoc]) data[currentLoc] = [];
+  data[currentLoc].push({ name, lights: scnDraft });
+  saveScen(data);
+  hideScnName();
+  renderUserScen();
+});
+renderUserScen();
 
 const dimmerEl = document.getElementById("dimmer");
 const dimmerRange = document.getElementById("dimmerRange");

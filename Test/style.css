@@ -153,6 +153,23 @@ body { display: flex; flex-direction: column; }
   font-weight: 600;
 }
 .scn-emerg:hover { color: #fff; background: #c85a5b; }
+.scn-add {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #c5d0da;
+}
+.scn-name {
+  display: block;
+  width: 100%;
+  padding: 10px 18px;
+  color: #e8eef6;
+  background: #1a2533;
+  border: 0;
+  font: 13px/1.35 "Segoe UI", sans-serif;
+  outline: none;
+}
+.scn-name[hidden] { display: none; }
 
 #marquee {
   position: absolute;
