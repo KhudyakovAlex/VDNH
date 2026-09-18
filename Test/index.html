@@ -45,6 +45,7 @@
       <div class="loc-branch">
         <button type="button" class="loc loc-l2" data-loc="hall1">Выставочный зал 1</button>
         <div class="loc-branch">
+          <button type="button" class="loc loc-l3" data-loc="hall1zal">Зал</button>
           <button type="button" class="loc loc-l3" data-loc="tech">Техпомещения</button>
           <button type="button" class="loc loc-l3" data-loc="restrooms">Санузлы</button>
           <button type="button" class="loc loc-l3" data-loc="admin">Администрация</button>
@@ -52,6 +53,7 @@
         </div>
         <button type="button" class="loc loc-l2" data-loc="hall2">Выставочный зал 2</button>
         <div class="loc-branch">
+          <button type="button" class="loc loc-l3" data-loc="hall2zal">Зал</button>
           <button type="button" class="loc loc-l3" data-loc="admin2">Администрация</button>
         </div>
         <button type="button" class="loc loc-l2" data-loc="lobby">Вестибюль</button>
@@ -62,6 +64,11 @@
           <button type="button" class="loc loc-l3" data-loc="accounting">Бухгалтерия</button>
         </div>
       </div>
+    </aside>
+    <aside class="loc-panel scn-panel" aria-label="Сценарии">
+      <div class="loc-title">Сценарии</div>
+      <button type="button" class="scn scn-emerg" id="scnEmerg">Аварийный</button>
+      <button type="button" class="scn" id="scnDuty">Дежурный</button>
     </aside>
     <div id="marquee"></div>
     <svg id="lassoSvg" class="lasso-svg" aria-hidden="true">
@@ -81,7 +88,10 @@
       </button>
       <button type="button" id="grpBreak" title="Разобрать группу">Разобрать группу</button>
     </div>
-    <button type="button" id="camCopy" title="Копировать координаты">Координаты</button>
+    <div class="copy-tools">
+      <button type="button" id="camCopy" title="Копировать координаты">Координаты</button>
+      <button type="button" id="fixCopy" title="Копировать выделенные светильники">Светильники</button>
+    </div>
     <div class="view-tools-wrap">
       <aside class="sel-tools" id="selTools" aria-label="Выделение">
         <button type="button" id="selRect" class="active" title="Квадрат">

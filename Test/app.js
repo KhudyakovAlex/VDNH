@@ -36,6 +36,16 @@ const LOCATIONS = {
     target: new THREE.Vector3(326.154, -17.970, -121.769),
     rotZ: 0.9707,
   },
+  hall1zal: {
+    pos: new THREE.Vector3(136.214, 167.454, -48.078),
+    target: new THREE.Vector3(136.214, -13.126, -51.690),
+    rotZ: 0,
+  },
+  hall2zal: {
+    pos: new THREE.Vector3(328.710, 136.854, -120.020),
+    target: new THREE.Vector3(326.154, -17.970, -121.769),
+    rotZ: 0.9707,
+  },
   lobby: {
     pos: new THREE.Vector3(278.597, 142.944, -59.830),
     target: new THREE.Vector3(276.996, -28.607, -62.865),
@@ -87,6 +97,129 @@ const LOCATIONS = {
     rotZ: 0.0015,
   },
 };
+const LOC_CHILDREN = {
+  floor1: ["hall1", "hall2", "lobby"],
+  hall1: ["hall1zal", "tech", "restrooms", "admin", "meeting"],
+  hall2: ["hall2zal", "admin2"],
+  lobby: ["entrance", "hall", "security", "accounting"],
+};
+let currentLoc = "floor1";
+function locIds(ranges, extra) {
+  const names = [];
+  for (const [from, to] of ranges) {
+    for (let i = from; i <= to; i++) names.push("D-" + i);
+  }
+  return extra ? names.concat(extra) : names;
+}
+const LOC_FIXTURES = {
+  hall1: locIds(
+    [
+      [1010100, 1010129],
+      [1010200, 1010227],
+      [1010300, 1010327],
+      [1010400, 1010434],
+      [1020100, 1020129],
+      [1020200, 1020223],
+      [1020300, 1020319],
+      [1020400, 1020424],
+    ],
+    ["D-1110400", "D-1110407", "D-1120149"],
+  ),
+  hall2: locIds([
+    [1050100, 1050119],
+    [1050200, 1050219],
+    [1050300, 1050319],
+    [1050400, 1050415],
+    [1060100, 1060115],
+    [1060200, 1060215],
+  ]),
+  entrance: locIds([
+    [1070233, 1070238],
+    [1070245, 1070246],
+    [1070249, 1070254],
+    [1070300, 1070336],
+    [1070400, 1070455],
+    [1080100, 1080155],
+    [1080200, 1080237],
+    [1080300, 1080318],
+    [1080324, 1080327],
+    [1080335, 1080351],
+    [1080401, 1080456],
+    [1090100, 1090155],
+    [1090200, 1090245],
+    [1090249, 1090254],
+    [1090306, 1090332],
+    [1090334, 1090350],
+    [1090417, 1090444],
+  ]),
+  accounting: locIds([
+    [1070100, 1070155],
+    [1070200, 1070226],
+    [1070228, 1070232],
+    [1070239, 1070239],
+    [1070241, 1070244],
+    [1070247, 1070248],
+  ]),
+  security: locIds([
+    [1140200, 1140201],
+    [1140300, 1140311],
+    [1140333, 1140353],
+    [1140424, 1140430],
+    [1140446, 1140460],
+    [1150100, 1150158],
+  ]),
+};
+const LOC_OWNED = new Map();
+for (const [id, names] of Object.entries(LOC_FIXTURES)) {
+  for (const n of names) LOC_OWNED.set(n, id);
+}
+function locDescendants(id) {
+  const kids = LOC_CHILDREN[id] || [];
+  return kids.flatMap((k) => [k, ...locDescendants(k)]);
+}
+function nearestLoc(fix, skip) {
+  let best = null;
+  let bestD = Infinity;
+  for (const id of Object.keys(LOCATIONS)) {
+    if (skip.has(id)) continue;
+    const d = fix.center.distanceToSquared(LOCATIONS[id].target);
+    if (d < bestD) {
+      bestD = d;
+      best = id;
+    }
+  }
+  return best;
+}
+function assignedLoc(fix) {
+  const owned = LOC_OWNED.get(fix.name);
+  if (owned === "hall1") return "hall1zal";
+  if (owned === "hall2") return "hall2zal";
+  if (owned) return owned;
+  const skip = new Set([
+    "floor1",
+    "lobby",
+    "hall1",
+    "hall2",
+    "hall1zal",
+    "hall2zal",
+    "entrance",
+    "accounting",
+    "security",
+  ]);
+  return nearestLoc(fix, skip) || "hall";
+}
+function fixturesForLoc(id) {
+  if (id === "floor1") return fixtures;
+  if (id === "lobby") {
+    return fixtures.filter((f) => {
+      const own = LOC_OWNED.get(f.name);
+      return own !== "hall1" && own !== "hall2";
+    });
+  }
+  if (id === "hall") return fixtures.filter((f) => !LOC_OWNED.has(f.name));
+  const want = new Set([id, ...locDescendants(id)]);
+  return fixtures.filter((f) => want.has(assignedLoc(f)));
+}
 
 const camera = new THREE.PerspectiveCamera(40, viewW() / viewH(), 0.1, 200000);
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -226,14 +359,23 @@ function buildScene(root) {
 function mixCol(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
-const COL_OFF = [0.12, 0.07, 0.02];
+const COL_OFF = [0.03, 0.032, 0.036];
+const COL_DIM = [0.2, 0.09, 0.02];
 const COL_ON = [1, 0.42, 0.04];
 const COL_HOV = [1, 0.62, 0.14];
+function isOff(fix) {
+  return !fix.on || fix.level < 0.01;
+}
+function litLevel(fix) {
+  return isOff(fix) ? 0 : fix.level;
+}
 function baseColor(fix) {
-  return mixCol(COL_OFF, COL_ON, fix.on ? fix.level : 0);
+  const t = litLevel(fix);
+  return t <= 0 ? COL_OFF : mixCol(COL_DIM, COL_ON, t);
 }
 function hoverColor(fix) {
-  return mixCol(COL_OFF, COL_HOV, fix.on ? fix.level : 0);
+  const t = litLevel(fix);
+  return t <= 0 ? COL_OFF : mixCol(COL_DIM, COL_HOV, t);
 }
 function paintFixture(fix) {
   if (!lightMesh) return;
@@ -253,12 +395,13 @@ function paintFixture(fix) {
   col.needsUpdate = true;
 }
 function setFixture(fix, on) {
+  if (on && fix.level < 0.01) fix.level = 1;
   fix.on = on;
   paintFixture(fix);
 }
 function setLevel(fix, level) {
   fix.level = Math.min(1, Math.max(0, level));
-  fix.on = fix.level > 0.005;
+  fix.on = fix.level >= 0.01;
   paintFixture(fix);
 }
 function groupFor(fix) {
@@ -668,12 +811,11 @@ function applyTopView() {
 }
 
 function setActiveLoc(id) {
+  currentLoc = id;
   document.querySelectorAll(".loc").forEach((b) => b.classList.toggle("active", b.dataset.loc === id));
 }
 
-document.getElementById("camCopy")?.addEventListener("click", async () => {
-  const f = (v) => v.x.toFixed(3) + "  " + v.y.toFixed(3) + "  " + v.z.toFixed(3);
-  const text = "pos     " + f(camera.position) + "\ntarget  " + f(controls.target) + "\nrotZ    " + controls.getAzimuthalAngle().toFixed(4);
+async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -684,10 +826,26 @@ document.getElementById("camCopy")?.addEventListener("click", async () => {
     document.execCommand("copy");
     ta.remove();
   }
-  const btn = document.getElementById("camCopy");
+}
+function flashBtn(id, ok, back) {
+  const btn = document.getElementById(id);
   if (!btn) return;
-  btn.textContent = "Скопировано";
-  setTimeout(() => { btn.textContent = "Координаты"; }, 1200);
+  btn.textContent = ok;
+  setTimeout(() => { btn.textContent = back; }, 1200);
+}
+document.getElementById("camCopy")?.addEventListener("click", async () => {
+  const f = (v) => v.x.toFixed(3) + "  " + v.y.toFixed(3) + "  " + v.z.toFixed(3);
+  await copyText("pos     " + f(camera.position) + "\ntarget  " + f(controls.target) + "\nrotZ    " + controls.getAzimuthalAngle().toFixed(4));
+  flashBtn("camCopy", "Скопировано", "Координаты");
+});
+document.getElementById("fixCopy")?.addEventListener("click", async () => {
+  const names = [...new Set(fixtures.filter((f) => f.selected).map((f) => f.name))].sort();
+  if (!names.length) {
+    flashBtn("fixCopy", "Нет выделения", "Светильники");
+    return;
+  }
+  await copyText(names.join("\n"));
+  flashBtn("fixCopy", "Скопировано " + names.length, "Светильники");
 });
 
 document.getElementById("camHome")?.addEventListener("click", () => {
@@ -700,6 +858,12 @@ document.querySelectorAll(".loc").forEach((btn) => {
     applyLocation(btn.dataset.loc);
     setActiveLoc(btn.dataset.loc);
   });
+});
+document.getElementById("scnEmerg")?.addEventListener("click", () => {
+  setLevelAll(fixtures, 1);
+});
+document.getElementById("scnDuty")?.addEventListener("click", () => {
+  setLevelAll(fixturesForLoc(currentLoc), 0.15);
 });
 
 const dimmerEl = document.getElementById("dimmer");
