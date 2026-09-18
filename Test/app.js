@@ -873,6 +873,7 @@ function setActiveLoc(id) {
   hideScnName();
   renderUserScen();
   rebuildNavZones();
+  applyHover(null);
 }
 
 async function copyText(text) {
@@ -1134,6 +1135,7 @@ function viewPoint(e) {
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 function applyHover(hoverFix) {
+  if (!isLeafLoc() && !editGroups) hoverFix = null;
   fixtures.forEach((f) => {
     const inEdit = editGroups && editGroup?.names.includes(f.name);
     f.targetHover = f.selected || inEdit || f === hoverFix ? 1 : 0;
