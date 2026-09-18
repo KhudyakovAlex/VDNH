@@ -99,19 +99,19 @@ body { display: flex; flex-direction: column; }
   top: 12px;
   left: 12px;
   z-index: 2;
-  min-width: 160px;
-  padding: 8px 0 6px;
+  min-width: 200px;
+  padding: 14px 0 12px;
   background: #1e2c39;
 }
 .loc-title {
-  padding: 2px 12px 8px;
+  padding: 4px 18px 12px;
   color: #9aa7b5;
   font-size: 12px;
 }
 .loc {
   display: block;
   width: 100%;
-  padding: 7px 12px;
+  padding: 10px 18px;
   color: #c5d0da;
   background: transparent;
   border: 0;
@@ -121,6 +121,14 @@ body { display: flex; flex-direction: column; }
 }
 .loc:hover { color: #e8eef6; background: #1a2533; }
 .loc.active { color: #e8eef6; background: #1a2533; }
+.loc-l1 { font-weight: 600; }
+.loc-branch {
+  margin: 0 0 4px 16px;
+  padding-left: 12px;
+  border-left: 1px solid #2a3b4c;
+}
+.loc-l2 { padding-left: 12px; }
+.loc-l3 { padding-left: 12px; font-size: 12px; }
 
 #marquee {
   position: absolute;

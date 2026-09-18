@@ -41,10 +41,27 @@
     <div id="loader">Загрузка модели…</div>
     <aside class="loc-panel" aria-label="Локации">
       <div class="loc-title">Локации</div>
-      <button type="button" class="loc active" data-loc="floor1">Этаж 1</button>
-      <button type="button" class="loc" data-loc="hall1">Выставочный зал 1</button>
-      <button type="button" class="loc" data-loc="hall2">Выставочный зал 2</button>
-      <button type="button" class="loc" data-loc="lobby">Прихожая</button>
+      <button type="button" class="loc loc-l1 active" data-loc="floor1">Этаж 1</button>
+      <div class="loc-branch">
+        <button type="button" class="loc loc-l2" data-loc="hall1">Выставочный зал 1</button>
+        <div class="loc-branch">
+          <button type="button" class="loc loc-l3" data-loc="tech">Техпомещения</button>
+          <button type="button" class="loc loc-l3" data-loc="restrooms">Санузлы</button>
+          <button type="button" class="loc loc-l3" data-loc="admin">Администрация</button>
+          <button type="button" class="loc loc-l3" data-loc="meeting">Переговорная</button>
+        </div>
+        <button type="button" class="loc loc-l2" data-loc="hall2">Выставочный зал 2</button>
+        <div class="loc-branch">
+          <button type="button" class="loc loc-l3" data-loc="admin2">Администрация</button>
+        </div>
+        <button type="button" class="loc loc-l2" data-loc="lobby">Вестибюль</button>
+        <div class="loc-branch">
+          <button type="button" class="loc loc-l3" data-loc="entrance">Вход</button>
+          <button type="button" class="loc loc-l3" data-loc="hall">Холл</button>
+          <button type="button" class="loc loc-l3" data-loc="security">Охрана</button>
+          <button type="button" class="loc loc-l3" data-loc="accounting">Бухгалтерия</button>
+        </div>
+      </div>
     </aside>
     <div id="marquee"></div>
     <svg id="lassoSvg" class="lasso-svg" aria-hidden="true">

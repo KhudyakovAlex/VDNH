@@ -22,23 +22,69 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.setSize(viewW(), viewH());
 viewEl.appendChild(renderer.domElement);
 
-const HOME_POS = new THREE.Vector3(290.064, 208.357, 90.812);
-const HOME_TARGET = new THREE.Vector3(202.966, -16.992, -63.327);
+const HOME_POS = new THREE.Vector3(290.717, 232.855, 48.195);
+const HOME_TARGET = new THREE.Vector3(219.713, -15.641, -75.640);
 const LOCATIONS = {
-  floor1: { pos: HOME_POS, target: HOME_TARGET },
+  floor1: { pos: HOME_POS, target: HOME_TARGET, rotZ: 0.5206 },
   hall1: {
-    pos: new THREE.Vector3(125.957, 141.862, -58.907),
-    target: new THREE.Vector3(125.957, -12.994, -58.957),
+    pos: new THREE.Vector3(136.214, 167.454, -48.078),
+    target: new THREE.Vector3(136.214, -13.126, -51.690),
+    rotZ: 0,
   },
   hall2: {
-    pos: new THREE.Vector3(304.556, 129.271, -101.007),
-    target: new THREE.Vector3(304.556, -17.841, -101.007),
+    pos: new THREE.Vector3(328.710, 136.854, -120.020),
+    target: new THREE.Vector3(326.154, -17.970, -121.769),
     rotZ: 0.9707,
   },
   lobby: {
-    pos: new THREE.Vector3(257.622, 142.966, -51.942),
-    target: new THREE.Vector3(257.622, -28.619, -51.942),
+    pos: new THREE.Vector3(278.597, 142.944, -59.830),
+    target: new THREE.Vector3(276.996, -28.607, -62.865),
     rotZ: 0.4853,
+  },
+  tech: {
+    pos: new THREE.Vector3(26.686, 41.254, -27.101),
+    target: new THREE.Vector3(26.686, -11.473, -28.156),
+    rotZ: 0,
+  },
+  restrooms: {
+    pos: new THREE.Vector3(74.799, 29.087, -14.854),
+    target: new THREE.Vector3(74.799, -11.713, -15.670),
+    rotZ: 0,
+  },
+  admin: {
+    pos: new THREE.Vector3(107.475, 28.322, -15.526),
+    target: new THREE.Vector3(107.475, -12.477, -16.342),
+    rotZ: 0,
+  },
+  meeting: {
+    pos: new THREE.Vector3(139.052, 28.315, -15.170),
+    target: new THREE.Vector3(139.052, -12.484, -15.986),
+    rotZ: 0,
+  },
+  admin2: {
+    pos: new THREE.Vector3(350.949, 43.649, -95.462),
+    target: new THREE.Vector3(350.949, -14.786, -95.462),
+    rotZ: 0.9770,
+  },
+  entrance: {
+    pos: new THREE.Vector3(292.489, 51.363, -32.988),
+    target: new THREE.Vector3(291.747, -28.115, -34.395),
+    rotZ: 0.4853,
+  },
+  hall: {
+    pos: new THREE.Vector3(275.979, 42.293, -59.397),
+    target: new THREE.Vector3(275.310, -29.436, -60.666),
+    rotZ: 0.4853,
+  },
+  security: {
+    pos: new THREE.Vector3(258.795, 29.755, -92.018),
+    target: new THREE.Vector3(258.250, -28.669, -93.052),
+    rotZ: 0.4853,
+  },
+  accounting: {
+    pos: new THREE.Vector3(242.359, 25.787, -14.017),
+    target: new THREE.Vector3(242.357, -29.697, -15.824),
+    rotZ: 0.0015,
   },
 };
 
