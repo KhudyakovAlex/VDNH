@@ -103,6 +103,15 @@ const LOC_CHILDREN = {
   hall2: ["hall2zal", "admin2"],
   lobby: ["entrance", "hall", "security", "accounting"],
 };
+function isLeafLoc(id = currentLoc) {
+  return !(LOC_CHILDREN[id] && LOC_CHILDREN[id].length);
+}
+function locParent(id) {
+  for (const [p, kids] of Object.entries(LOC_CHILDREN)) {
+    if (kids.includes(id)) return p;
+  }
+  return null;
+}
 let currentLoc = "floor1";
 function locIds(ranges, extra) {
   const names = [];
@@ -221,6 +230,53 @@ function fixturesForLoc(id) {
   return fixtures.filter((f) => want.has(assignedLoc(f)));
 }
 
+const navZones = [];
+const NAV_MAT = new THREE.MeshBasicMaterial({
+  transparent: true,
+  opacity: 0,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+function clearNavZones() {
+  for (const m of navZones) {
+    scene.remove(m);
+    m.geometry.dispose();
+  }
+  navZones.length = 0;
+}
+function rebuildNavZones() {
+  clearNavZones();
+  if (isLeafLoc() || !fixtures.length) return;
+  const tmp = new THREE.Vector3();
+  for (const id of LOC_CHILDREN[currentLoc] || []) {
+    const mem = fixturesForLoc(id);
+    if (!mem.length) continue;
+    const box = new THREE.Box3();
+    for (const f of mem) box.union(f.box);
+    box.expandByScalar(2);
+    const size = box.getSize(tmp);
+    const geo = new THREE.BoxGeometry(Math.max(size.x, 2), Math.max(size.y, 4), Math.max(size.z, 2));
+    const mesh = new THREE.Mesh(geo, NAV_MAT);
+    box.getCenter(mesh.position);
+    mesh.userData.loc = id;
+    mesh.userData.vol = size.x * size.y * size.z;
+    scene.add(mesh);
+    navZones.push(mesh);
+  }
+}
+function pickNavLoc(e) {
+  if (!navZones.length) return null;
+  pointerFromEvent(e);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(navZones, false);
+  if (!hits.length) return null;
+  let best = hits[0].object;
+  for (const h of hits) {
+    if (h.object.userData.vol < best.userData.vol) best = h.object;
+  }
+  return best.userData.loc || null;
+}
+
 const camera = new THREE.PerspectiveCamera(40, viewW() / viewH(), 0.1, 200000);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableRotate = true;
@@ -262,6 +318,7 @@ async function init() {
     scene.add(key.target);
     if (countEl) countEl.textContent = "Светильников: " + fixtures.length;
     applyPresetGroups();
+    rebuildNavZones();
     loaderEl.classList.add("hidden");
     window.__READY = true;
   } catch (err) {
@@ -815,6 +872,7 @@ function setActiveLoc(id) {
   document.querySelectorAll(".loc").forEach((b) => b.classList.toggle("active", b.dataset.loc === id));
   hideScnName();
   renderUserScen();
+  rebuildNavZones();
 }
 
 async function copyText(text) {
@@ -936,6 +994,7 @@ document.getElementById("scnAdd")?.addEventListener("click", () => {
 });
 scnNameEl?.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    e.stopPropagation();
     hideScnName();
     return;
   }
@@ -1023,6 +1082,16 @@ function hideSelTools() {
 }
 window.addEventListener("keydown", (e) => {
   if (e.key === "Shift") showSelTools();
+  if (e.key === "Escape") {
+    if (scnNameEl && !scnNameEl.hidden) {
+      hideScnName();
+      return;
+    }
+    const p = locParent(currentLoc);
+    if (!p) return;
+    applyLocation(p);
+    setActiveLoc(p);
+  }
 });
 window.addEventListener("keyup", (e) => {
   if (e.key === "Shift") hideSelTools();
@@ -1162,6 +1231,7 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
   press = { x: e.clientX, y: e.clientY, id: e.pointerId, fix, held: false };
   if (fix) {
     if (editGroups) return;
+    if (!isLeafLoc()) return;
     holdTimer = setTimeout(() => {
       if (!press?.fix) return;
       press.held = true;
@@ -1210,6 +1280,14 @@ renderer.domElement.addEventListener("pointerup", (e) => {
   if (dx * dx + dy * dy > 25) return;
   if (editGroups) {
     if (fix) clickEditGroup(fix);
+    return;
+  }
+  if (!isLeafLoc()) {
+    const loc = pickNavLoc(e);
+    if (loc) {
+      applyLocation(loc);
+      setActiveLoc(loc);
+    } else if (!fix) clearSelection();
     return;
   }
   if (!fix) {
