@@ -11,6 +11,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def log_message(self, format, *args):
+        # Строка лога пишется до статуса HTTP. Мёртвая консоль не должна рвать ответ.
+        try:
+            super().log_message(format, *args)
+        except (OSError, ValueError):
+            pass
+
 
 def lan_ips():
     ips = []
@@ -39,6 +46,8 @@ if __name__ == "__main__":
     for ip in lan_ips():
         print("В локалке:    http://%s:%s/" % (ip, PORT), flush=True)
     print("Стоп: Ctrl+C", flush=True)
-    with socketserver.ThreadingTCPServer(("0.0.0.0", PORT), Handler) as httpd:
-        httpd.allow_reuse_address = True
+    class Server(socketserver.ThreadingTCPServer):
+        allow_reuse_address = True
+
+    with Server(("0.0.0.0", PORT), Handler) as httpd:
         httpd.serve_forever()
