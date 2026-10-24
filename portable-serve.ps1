@@ -29,7 +29,7 @@ try {
 
 Write-Host "Корень: $Root"
 Write-Host "Браузер: $Prefix"
-Write-Host "Стоп: закрой это окно"
+Write-Host "Стоп: stop.bat в корне. Окно Dominion не закрывать."
 Start-Process $Prefix
 
 while ($listener.IsListening) {

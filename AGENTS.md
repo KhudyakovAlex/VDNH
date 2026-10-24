@@ -8,7 +8,7 @@
 
 - Разработка: `python serve.py` из корня репо, корень статики — `Test/`, порт **80**, bind `0.0.0.0`.
 - Этот ПК: http://127.0.0.1/
-- Портатив: `start.bat` + `portable-serve.ps1` + папка `Test` → http://127.0.0.1:8080/ (PowerShell, без Python).
+- Портатив: `start.bat` в корне, обычным двойным щелчком (не от администратора — Postgres не встанет). Рядом `Test`, `portable-serve.ps1` и `DominionPortable`. Два сервера: павильон http://127.0.0.1:8080/ и демка http://127.0.0.1:18473/ (admin / admin). Окно Dominion не закрывать. Стоп — `stop.bat`. Логотип открывает демку окном 1440×900.
 - `file://` в Chrome не работает (модули + GLB). Не предлагать «просто открой html», если не просят.
 
 Нужные файлы отдачи: `Test/index.html`, `app.js`, `style.css`, `floor1.glb`, `logo.jpg`, `vendor/`. IFC/SKP/DWG в `Test/` — исходники, не для портатива.
