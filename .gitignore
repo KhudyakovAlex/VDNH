@@ -1,3 +1,6 @@
 ﻿*.bak
 **/*_r1.pdf
+.vscode/
+__pycache__/
+DominionPortable/
 
